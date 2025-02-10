@@ -45,3 +45,64 @@ const userUpdateSchema = z.object({
     .describe("user profile image URL"),
   user_id: z.string().describe("user ID"),
 });
+
+// Workout related types
+export type Workout = {
+  id: string;
+  userId: string;
+  date: Date;
+  createdAt: Date;
+  startTime: Date;
+  endTime: Date;
+  duration: number;
+  notes?: string;
+};
+
+export type Exercise = {
+  id: string;
+  workoutId: string;
+  exerciseName: string;
+  startTime: Date;
+  endTime: Date;
+  duration: number;
+  notes?: string;
+};
+
+export type Set = {
+  id: string;
+  exerciseId: string;
+  reps: number;
+  weight: number;
+  setNumber: number;
+  notes?: string;
+};
+
+// Input types for creating new records
+export type CreateWorkoutInput = Omit<Workout, 'id' | 'createdAt'> & {
+  exercises: {
+    exerciseName: string;
+    duration: number;
+    startTime: Date;
+    endTime: Date;
+    notes?: string;
+    sets: {
+      setNumber: number;
+      reps: number;
+      weight: number;
+      notes?: string;
+    }[];
+  }[];
+};
+
+export type CreateExerciseInput = Omit<Exercise, 'id'>;
+
+export type CreateSetInput = Omit<Set, 'id'>;
+
+// Relationship types
+export type WorkoutWithExercises = Workout & {
+  exercises: ExerciseWithSets[];
+};
+
+export type ExerciseWithSets = Exercise & {
+  sets: Set[];
+};

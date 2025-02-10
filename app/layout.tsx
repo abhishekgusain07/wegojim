@@ -45,7 +45,7 @@ export default function RootLayout({
   return (
     <AuthWrapper>
       <html lang="en" suppressHydrationWarning>
-        <body className={GeistSans.className}>
+        <body className={GeistSans.className} suppressHydrationWarning>
           <Provider>
             <ThemeProvider
               attribute="class"

@@ -72,6 +72,10 @@ export const workouts = pgTable("workouts", {
     .references(() => users.id),
   date: date("date").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  duration: integer("duration").notNull(),
+  notes: text("notes"),
 });
 
 export const workoutsRelations = relations(workouts, ({ one, many }) => ({
@@ -88,6 +92,10 @@ export const exercises = pgTable("exercises", {
     .notNull()
     .references(() => workouts.id),
   exerciseName: text("exercise_name").notNull(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  duration: integer("duration").notNull(),
+  notes: text("notes"),
 });
 
 export const exercisesRelations = relations(exercises, ({ one, many }) => ({
@@ -106,6 +114,7 @@ export const sets = pgTable("sets", {
   reps: integer("reps").notNull(),
   weight: real("weight").notNull(),
   setNumber: integer("set_number").notNull(),
+  notes: text("notes"),
 });
 
 export const setsRelations = relations(sets, ({ one }) => ({

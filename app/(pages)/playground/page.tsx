@@ -335,7 +335,7 @@ export default function PlaygroundPage() {
                     </SelectItem>
                     <SelectItem value="deepseek:deepseek-chat">
                       deepseek chat
-                    </SelectItem>
+                    </SelectItem>w
                     <SelectItem value="deepseek:deepseek-coder">
                       deepseek coder
                     </SelectItem>
@@ -344,6 +344,9 @@ export default function PlaygroundPage() {
                     </SelectItem>
                     <SelectItem value="groq:deepseek-r1-distill-llama-70b">
                       deepseek-r1-distill-llama-70b
+                    </SelectItem>
+                    <SelectItem value="gemini:gemini-2.0-flash">
+                      gemini-2.0-flash
                     </SelectItem>
                   </SelectContent>
                 </Select>
