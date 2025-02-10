@@ -3,6 +3,7 @@ import { invoices, subscriptions, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { uid } from "uid";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -39,6 +40,7 @@ async function handleSubscriptionEvent(
   }
 
   const subscriptionData = {
+    id: uid(32),
     subscriptionId: subscription.id,
     stripeUserId: subscription.customer as string,
     status: subscription.status,
@@ -129,6 +131,7 @@ async function handleInvoiceEvent(
   }
 
   const invoiceData = {
+    id: uid(32),
     invoiceId: invoice.id,
     subscriptionId: invoice.subscription as string,
     amountPaid: status === "succeeded" ? String(invoice.amount_paid / 100) : undefined,
@@ -182,7 +185,7 @@ async function handleCheckoutSessionCompleted(event: Stripe.Event) {
       await db
         .update(users)
         .set({ subscription: session.id })
-        .where(eq(users.userId, metadata?.userId));
+        .where(eq(users.clerkId, metadata?.userId));
 
       return NextResponse.json({
         status: 200,

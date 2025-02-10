@@ -28,7 +28,7 @@ export const isAuthorized = async (
   }
 
   try {
-    const data = await db.select().from(users).where(eq(users.userId, userId));
+    const data = await db.select().from(users).where(eq(users.clerkId, userId));
 
     if (data?.[0]?.subscription) {
       return {

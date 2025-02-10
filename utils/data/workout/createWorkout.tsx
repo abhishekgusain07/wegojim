@@ -17,16 +17,19 @@ export const createWorkout = async ({workoutData}:{workoutData: CreateWorkoutInp
     if (!userId) {
       throw new Error("User not found");
     }
-    const workout = await db.insert(workouts).values({
-      id: uid(32),
-      userId,
-      date: new Date(workoutData.date),
-      startTime: new Date(workoutData.startTime),
-      endTime: new Date(workoutData.endTime),
-      duration: workoutData.duration,
-      notes: workoutData.notes || ''
-    }).returning();
 
+    const workout = await db.insert(workouts).values({
+        id: uid(32),
+        userId,
+        date: new Date(workoutData.date) as any,
+        startTime: new Date(workoutData.startTime) as any,
+        endTime: new Date(workoutData.endTime) as any,
+        duration: Number(workoutData.duration),
+        notes: workoutData.notes || ''
+      }).returning();
+    
+    
+    
     //create exercises
     await Promise.all(workoutData.exercises.map(async (exercise: {exerciseName: string, startTime: Date, endTime: Date, duration: number, notes?: string, sets: {setNumber: number, reps: number, weight: number, notes?: string}[]}) => {
        const insertedExercise = await db.insert(exercises).values({
