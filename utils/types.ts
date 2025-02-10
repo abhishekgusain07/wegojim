@@ -98,11 +98,41 @@ export type CreateExerciseInput = Omit<Exercise, 'id'>;
 
 export type CreateSetInput = Omit<Set, 'id'>;
 
-// Relationship types
-export type WorkoutWithExercises = Workout & {
-  exercises: ExerciseWithSets[];
-};
+// // Relationship types
+// export type WorkoutWithExercises = Workout & {
+//   exercises: ExerciseWithSets[];
+// };
 
-export type ExerciseWithSets = Exercise & {
-  sets: Set[];
-};
+// export type ExerciseWithSets = Exercise & {
+//   sets: Set[];
+// };
+
+export interface WorkoutWithExercises {
+  id: string;
+  userId: string;
+  date: string;
+  createdAt: Date | null;
+  startTime: Date;
+  endTime: Date;
+  duration: number;
+  notes?: string | null;
+  exercises: {
+    id: string;
+    exerciseName: string;
+    duration: number;
+    startTime: Date;
+    endTime: Date;
+    notes?: string | null;
+    sets: {
+      id: string;
+      exerciseId: string;
+      setNumber: number;
+      reps: number;
+      weight: number;
+      notes?: string | null;
+    }[];
+  }[];
+}
+
+// This type will be used to represent the structure returned by fetchWorkouts
+export type WorkoutsWithExercisesResponse = WorkoutWithExercises[];

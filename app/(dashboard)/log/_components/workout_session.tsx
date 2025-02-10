@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/form";
 import { intervalToDuration } from "date-fns";
 import { createWorkout } from "@/utils/data/workout/createWorkout";
+import { fetchWorkouts } from "@/utils/data/workout/fetchWorkouts";
 
 // Form Schemas
 const addExerciseSchema = z.object({
@@ -66,11 +67,8 @@ const WorkoutSession = () => {
   const fetchTodaysWorkouts = async () => {
     try {
       setIsLoading(true);
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/workouts/today');
-      // const data = await response.json();
-      // setTodaysWorkouts(data);
-      setTodaysWorkouts([]); // Temporary empty array until backend is implemented
+      const workouts = await fetchWorkouts();
+      setTodaysWorkouts(workouts);
     } catch (error) {
       console.error('Failed to fetch today\'s workouts:', error);
       toast.error('Failed to load today\'s workouts');
@@ -302,61 +300,21 @@ const WorkoutSession = () => {
                   <Dumbbell className="w-8 h-8 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="font-medium text-lg">No workouts yet</p>
+                  <p className="text-lg font-semibold">No workouts recorded today</p>
                   <p className="text-sm text-muted-foreground">Start your first workout for today!</p>
                 </div>
               </div>
             ) : (
               todaysWorkouts.map((workout) => (
-                <Card 
-                  key={workout.id} 
-                  className="p-4 hover:shadow-lg transition-all duration-300 group"
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-primary/10 p-2 rounded-lg">
-                          <Dumbbell className="w-4 h-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(workout.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                          <p className="font-medium">
-                            {workout.exercises.length} {workout.exercises.length === 1 ? 'exercise' : 'exercises'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="bg-primary/5 px-3 py-1 rounded-full">
-                        <p className="text-sm font-medium text-primary">
-                          {intervalToDuration({ start: 0, end: workout.duration * 1000 }).hours ? `${intervalToDuration({ start: 0, end: workout.duration * 1000 }).hours}h ${intervalToDuration({ start: 0, end: workout.duration * 1000 }).minutes}m` : `${intervalToDuration({ start: 0, end: workout.duration * 1000 }).minutes}m`}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
+                <Card key={workout.id} className="p-4 bg-gradient-to-br from-background/80 to-muted/30 shadow-lg rounded-lg transition-transform hover:scale-105">
+                  <div className="flex flex-col">
+                    <h3 className="text-lg font-semibold">{new Date(workout.startTime).toLocaleDateString()}</h3>
+                    <p className="text-sm text-muted-foreground">Duration: {workout.duration} seconds</p>
+                    <div className="mt-2">
                       {workout.exercises.map((exercise) => (
-                        <div 
-                          key={exercise.id}
-                          className="bg-muted/30 rounded-lg p-3 space-y-2"
-                        >
-                          <div className="flex items-center justify-between">
-                            <p className="font-medium">{exercise.exerciseName}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {exercise.sets.length} {exercise.sets.length === 1 ? 'set' : 'sets'}
-                            </p>
-                          </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            {exercise.sets.map((set, index) => (
-                              <div 
-                                key={index}
-                                className="bg-background/80 rounded-lg p-2 flex justify-between items-center text-sm"
-                              >
-                                <span className="font-medium">{set.reps} reps</span>
-                                <span className="text-primary">{set.weight}kg</span>
-                              </div>
-                            ))}
-                          </div>
+                        <div key={exercise.id} className="flex justify-between items-center border-b border-muted/30 py-2">
+                          <span className="font-medium">{exercise.exerciseName}</span>
+                          <span className="text-sm text-muted-foreground">{exercise.sets.length} sets</span>
                         </div>
                       ))}
                     </div>
