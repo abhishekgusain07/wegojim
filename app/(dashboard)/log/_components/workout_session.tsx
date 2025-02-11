@@ -371,6 +371,18 @@ const WorkoutSession = () => {
                     <span className="hidden sm:inline">Reset</span>
                   </Button>
                   <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setActiveSession(null);
+                      toast.success("Workout cancelled");
+                    }}
+                    size="sm"
+                    className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <X className="w-4 h-4" />
+                    <span className="hidden sm:inline">Cancel</span>
+                  </Button>
+                  <Button 
                     onClick={endSession}
                     size="sm"
                     className="gap-2"
@@ -379,7 +391,7 @@ const WorkoutSession = () => {
                     {savingWorkout ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <X className="w-4 h-4" />
+                      <CheckCircle className="w-4 h-4" />
                     )}
                     <span className="hidden sm:inline">
                       {savingWorkout ? "Saving" : "Finish"}
@@ -495,6 +507,7 @@ const ExerciseCard = ({
   onDeleteSet: (exerciseId: string, setIndex: number) => void;
   isFirst: boolean;
 }) => {
+  const [isExpanded, setIsExpanded] = useState(!exercise.isCompleted);
   const form = useForm<AddSetForm>({
     resolver: zodResolver(addSetSchema),
     defaultValues: {
@@ -517,14 +530,28 @@ const ExerciseCard = ({
   const durationString = `${formattedDuration.hours !== undefined ? `${formattedDuration.hours}h ` : '0h '}${formattedDuration.minutes !== undefined ? `${formattedDuration.minutes}m ` : '0m '}${formattedDuration.seconds !== undefined ? `${formattedDuration.seconds}s` : '0s'}`;
 
   return (
-    <Card className={cn(
-      "overflow-hidden",
-      isFirst && "animate-slide-in",
-      exercise.isCompleted && "opacity-80"
-    )}>
+    <Card 
+      className={cn(
+        "overflow-hidden cursor-pointer",
+        isFirst && "animate-slide-in",
+        exercise.isCompleted && "opacity-80"
+      )}
+      onClick={() => exercise.isCompleted && setIsExpanded(!isExpanded)}
+    >
       <div className="p-4 space-y-3">
-        {/* Exercise Header */}
-        <div className="flex flex-col gap-2">
+        {/* Exercise Header - Always visible */}
+        <div 
+          className={cn(
+            "flex flex-col gap-2",
+            exercise.isCompleted && "cursor-pointer"
+          )}
+          onClick={(e) => {
+            if (exercise.isCompleted) {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }
+          }}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={cn(
@@ -536,7 +563,10 @@ const ExerciseCard = ({
             <div className="flex items-center gap-2">
               {!exercise.isCompleted && (
                 <Button
-                  onClick={() => onComplete(exercise.id)}
+                  onClick={() => {
+                    onComplete(exercise.id)
+                    setIsExpanded(false);
+                  }}
                   variant="ghost"
                   size="sm"
                   className="text-green-500 hover:text-green-600 hover:bg-green-500/10"
@@ -663,7 +693,7 @@ const ExerciseCard = ({
         )}
 
         {/* Sets History */}
-        {exercise.sets.length > 0 && (
+        {isExpanded && exercise.sets.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-border/60"></div>
