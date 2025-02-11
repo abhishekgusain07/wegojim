@@ -117,6 +117,17 @@ const WorkoutSession = () => {
       }))
     };
 
+    if (
+      !workoutData.exercises || 
+      workoutData.exercises.length === 0 || 
+      workoutData.exercises.some(exercise => !exercise.sets || exercise.sets.length === 0)
+    ) {
+      toast.error("cannot save empty workouts")
+      setSavingWorkout(false);
+      return;
+    }
+
+    
     try {
       console.log("Workout data to send:", workoutData)
       const workout = await createWorkout({workoutData})
