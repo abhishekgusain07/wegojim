@@ -109,7 +109,7 @@ export const exercisesRelations = relations(exercises, ({ one, many }) => ({
 export const sets = pgTable("sets", {
   id: text("id").primaryKey(),
   exerciseId: text("exercise_id")
-    .notNull()
+  .notNull()
     .references(() => exercises.id),
   reps: integer("reps").notNull(),
   weight: real("weight").notNull(),
