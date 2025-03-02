@@ -4,7 +4,6 @@ import { Plus, Dumbbell, Check, Timer, X, CalendarDays, RotateCcw, CheckCircle, 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { CreateWorkoutInput, CreateExerciseInput, CreateSetInput, WorkoutWithExercises } from "@/utils/types";
 import { useForm } from "react-hook-form";
@@ -21,6 +20,8 @@ import {
 import { intervalToDuration } from "date-fns";
 import { createWorkout } from "@/utils/data/workout/createWorkout";
 import { fetchWorkouts } from "@/utils/data/workout/fetchWorkouts";
+import { useWorkoutSessionStore, ActiveWorkout } from "@/app/store/workoutSessionStore";
+import { toast } from "sonner";
 
 // Form Schemas
 const addExerciseSchema = z.object({
@@ -37,17 +38,19 @@ const addSetSchema = z.object({
 type AddExerciseForm = z.infer<typeof addExerciseSchema>;
 type AddSetForm = z.infer<typeof addSetSchema>;
 
-interface ActiveWorkout extends Omit<CreateWorkoutInput, 'duration'> {
-  exercises: (Omit<CreateExerciseInput, 'workoutId'> & {
-    id: string;
-    duration: number;
-    sets: Omit<CreateSetInput, 'exerciseId'>[];
-    isCompleted?: boolean;
-  })[];
-}
-
 const WorkoutSession = () => {
-  const [activeSession, setActiveSession] = useState<ActiveWorkout | null>(null);
+  const {
+    activeSession,
+    startSession,
+    endSession,
+    restartSession,
+    addExercise,
+    addSet,
+    completeExercise,
+    deleteExercise,
+    deleteSet,
+    clearSession
+  } = useWorkoutSessionStore();
   const [todaysWorkouts, setTodaysWorkouts] = useState<WorkoutWithExercises[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [savingWorkout, setSavingWorkout] = useState<boolean>(false);
@@ -77,20 +80,7 @@ const WorkoutSession = () => {
     }
   };
 
-  const startSession = () => {
-    const now = new Date();
-    setActiveSession({
-      userId: "", // This will be filled with the actual user ID
-      date: now,
-      startTime: now,
-      endTime: new Date(),
-      notes: "",
-      exercises: [],
-    });
-    toast.success("Workout Started");
-  };
-
-  const endSession = async () => {
+  const handleEndSession = async () => {
     if (!activeSession) return;
     setSavingWorkout(true);
     const endTime = new Date();
@@ -122,144 +112,29 @@ const WorkoutSession = () => {
       workoutData.exercises.length === 0 || 
       workoutData.exercises.some(exercise => !exercise.sets || exercise.sets.length === 0)
     ) {
-      toast.error("cannot save empty workouts")
+      toast.error("Cannot save empty workouts");
       setSavingWorkout(false);
       return;
     }
 
-    
     try {
-      console.log("Workout data to send:", workoutData)
-      const workout = await createWorkout({workoutData})
+      console.log("Workout data to send:", workoutData);
+      const workout = await createWorkout({workoutData});
       toast.success("Workout Saved");
-      setActiveSession(null);
+      clearSession();
       await fetchTodaysWorkouts();
     } catch (error) {
       toast.error("Failed to save workout");
       console.error(error);
-    }finally{
+    } finally {
       setSavingWorkout(false);
     }
   };
 
-  const restartSession = () => {
-    const now = new Date();
-    setActiveSession({
-      userId: activeSession?.userId || "",
-      date: now,
-      startTime: now,
-      endTime: new Date(),
-      notes: "",
-      exercises: [],
-    });
-    toast.success("Workout Restarted");
-    exerciseForm.reset(); // Reset the exercise form
-  };
-
   const onAddExercise = (data: AddExerciseForm) => {
-    if (!activeSession) return;
-    
-    const now = new Date();
-    setActiveSession((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        exercises: [
-          ...prev.exercises,
-          {
-            id: Date.now().toString(),
-            exerciseName: data.exerciseName,
-            startTime: now,
-            endTime: now,
-            duration: 0,
-            sets: [],
-            notes: data.notes || "",
-            isCompleted: false,
-          },
-        ],
-      };
-    });
+    addExercise(data.exerciseName, data.notes);
     exerciseForm.reset();
     toast.success(`Added ${data.exerciseName}`);
-  };
-
-  const addSet = (exerciseId: string, reps: number, weight: number, notes?: string) => {
-    setActiveSession((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        exercises: prev.exercises.map((ex) => {
-          if (ex.id === exerciseId) {
-            const newSet = {
-              reps,
-              setNumber: ex.sets.length + 1,
-              weight,
-              notes,
-            };
-            
-            return {
-              ...ex,
-              endTime: new Date(),
-              sets: [...ex.sets, newSet],
-            };
-          }
-          return ex;
-        }),
-      };
-    });
-    toast.success(`Added set: ${reps} reps × ${weight}kg`);
-  };
-
-  const completeExercise = (exerciseId: string) => {
-    setActiveSession((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        exercises: prev.exercises.map((ex) => {
-          if (ex.id === exerciseId) {
-            return {
-              ...ex,
-              endTime: new Date(),
-              isCompleted: true,
-            };
-          }
-          return ex;
-        }),
-      };
-    });
-    toast.success("Exercise completed!");
-  };
-
-  const deleteExercise = (exerciseId: string) => {
-    setActiveSession((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        exercises: prev.exercises.filter((ex) => ex.id !== exerciseId),
-      };
-    });
-    toast.success("Exercise deleted");
-  };
-
-  const deleteSet = (exerciseId: string, setIndex: number) => {
-    setActiveSession((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        exercises: prev.exercises.map((ex) => {
-          if (ex.id === exerciseId) {
-            const newSets = [...ex.sets];
-            newSets.splice(setIndex, 1);
-            return {
-              ...ex,
-              sets: newSets,
-            };
-          }
-          return ex;
-        }),
-      };
-    });
-    toast.success("Set deleted");
   };
 
   return (
@@ -368,10 +243,13 @@ const WorkoutSession = () => {
                   <h1 className="text-xl lg:text-2xl font-bold">Active Workout</h1>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Timer className="w-4 h-4" />
-                    Started at {activeSession.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    Started at {activeSession?.startTime instanceof Date 
+                      ? activeSession.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                      : new Date(activeSession.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    }
                   </div>
                 </div>
-                <div className="flex items-center gap-2 ">
+                <div className="flex items-center gap-2">
                   <Button 
                     variant="outline"
                     onClick={restartSession}
@@ -384,7 +262,7 @@ const WorkoutSession = () => {
                   <Button 
                     variant="outline"
                     onClick={() => {
-                      setActiveSession(null);
+                      clearSession();
                       toast.success("Workout cancelled");
                     }}
                     size="sm"
@@ -394,7 +272,7 @@ const WorkoutSession = () => {
                     <span className="hidden sm:inline">Cancel</span>
                   </Button>
                   <Button 
-                    onClick={endSession}
+                    onClick={handleEndSession}
                     size="sm"
                     className="gap-2"
                     disabled={savingWorkout}
@@ -471,7 +349,7 @@ const WorkoutSession = () => {
                     <ExerciseCard
                       key={exercise.id}
                       exercise={exercise}
-                      onAddSet={(exerciseId, reps, weight, notes) => addSet(exerciseId, reps, weight, notes)}
+                      onAddSet={addSet}
                       onComplete={completeExercise}
                       onDelete={deleteExercise}
                       onDeleteSet={deleteSet}
@@ -534,8 +412,8 @@ const ExerciseCard = ({
   };
 
   const duration = exercise.isCompleted 
-    ? Math.round((exercise.endTime.getTime() - exercise.startTime.getTime()) / 1000)
-    : Math.round((new Date().getTime() - exercise.startTime.getTime()) / 1000);
+    ? Math.round((new Date(exercise.endTime).getTime() - new Date(exercise.startTime).getTime()) / 1000)
+    : Math.round((new Date().getTime() - new Date(exercise.startTime).getTime()) / 1000);
 
   const formattedDuration = intervalToDuration({ start: 0, end: duration * 1000 });
   const durationString = `${formattedDuration.hours !== undefined ? `${formattedDuration.hours}h ` : '0h '}${formattedDuration.minutes !== undefined ? `${formattedDuration.minutes}m ` : '0m '}${formattedDuration.seconds !== undefined ? `${formattedDuration.seconds}s` : '0s'}`;
